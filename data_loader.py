@@ -13,8 +13,8 @@ from torchvision import transforms
 from PIL import Image
 
 # Mapeo de carpetas a etiquetas binarias
-BENIGN_FOLDERS = {"birads1"}
-RISK_FOLDERS   = {"birads3", "birads4", "birads5"}
+BENIGN_FOLDERS = {"birads1", "birads3"}
+RISK_FOLDERS   = {"birads4", "birads5"}
 
 # Transformaciones
 TRAIN_TRANSFORMS = transforms.Compose([
@@ -39,7 +39,7 @@ EVAL_TRANSFORMS = transforms.Compose([
 class MammogramDataset(Dataset):
     """
     Carga imágenes de carpetas birads1/, birads3/, birads4/, birads5/
-    Etiquetas binarias: 0 -> benigno (birads1), 1 -> riesgo (birads3/4/5)
+    Etiquetas binarias: 0 -> benigno (birads1, birads3), 1 -> riesgo (birads4/5)
     """
 
     VALID_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff"}
