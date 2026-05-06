@@ -97,7 +97,7 @@ def main():
 
     # Evaluación
     if model is not None:
-        results = run_evaluation(CONFIG, checkpoint_path)
+        results = run_evaluation(CONFIG, checkpoint_path, val_loader)
 
     print("\n" + "="*70)
     print("🏁 PROCESO COMPLETADO")

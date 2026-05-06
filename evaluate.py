@@ -41,6 +41,37 @@ def predict(model, loader, device, threshold: float = 0.5):
     return all_labels, all_preds, all_probs
 
 
+def find_best_threshold(model, val_loader, device):
+    """Encuentra el mejor threshold para maximizar F1 en la clase riesgo usando el conjunto de validación"""
+    print("\n🔍 Buscando el mejor threshold en validación...")
+    model.eval()
+    all_probs = []
+    all_labels = []
+
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images = images.to(device)
+            logits = model(images)
+            probs = torch.sigmoid(logits).squeeze(1).cpu().numpy()
+            all_probs.extend(probs.tolist())
+            all_labels.extend(labels.numpy().tolist())
+
+    all_probs = np.array(all_probs)
+    all_labels = np.array(all_labels)
+
+    best_f1 = 0
+    best_threshold = 0.5
+    for threshold in np.arange(0.1, 0.9, 0.05):
+        preds = (all_probs >= threshold).astype(int)
+        f1 = f1_score(all_labels, preds, zero_division=0)
+        if f1 > best_f1:
+            best_f1 = f1
+            best_threshold = threshold
+
+    print(f"✅ Mejor threshold: {best_threshold:.2f} (F1: {best_f1:.4f})")
+    return best_threshold
+
+
 def plot_confusion_matrix(cm: np.ndarray, save_path: str):
     fig, ax = plt.subplots(figsize=(5, 4))
     sns.heatmap(
@@ -61,7 +92,7 @@ def plot_confusion_matrix(cm: np.ndarray, save_path: str):
     print(f"📊 Matriz de confusión guardada en: {save_path}")
 
 
-def run_evaluation(config, checkpoint_path=None):
+def run_evaluation(config, checkpoint_path=None, val_loader=None):
     """Evalúa el modelo guardado en el conjunto de prueba"""
 
     print("\n" + "="*70)
@@ -110,11 +141,19 @@ def run_evaluation(config, checkpoint_path=None):
           f"Val Loss: {ckpt.get('val_loss', '?'):.4f}")
 
     # ------------------------------------------------------------------
+    # Ajuste de threshold
+    # ------------------------------------------------------------------
+    if val_loader is not None:
+        threshold = find_best_threshold(model, val_loader, device)
+    else:
+        threshold = config["threshold"]
+
+    # ------------------------------------------------------------------
     # Inferencia
     # ------------------------------------------------------------------
     print("\n🔮 Realizando predicciones...")
     labels, preds, probs = predict(
-        model, test_loader, device, config["threshold"])
+        model, test_loader, device, threshold)
 
     # ------------------------------------------------------------------
     # Métricas
